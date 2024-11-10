@@ -17,18 +17,33 @@ from gtts import gTTS
 import speech_recognition as sr
 from io import BytesIO
 import time
-
+from elevenlabs import Voice, VoiceSettings, play
+from elevenlabs.client import ElevenLabs
 
 load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def text_to_speech(text, lang='nl'):
-    tts = gTTS(text=text, lang=lang)
-    audio_file = BytesIO()
-    tts.write_to_fp(audio_file)
-    audio_file.seek(0)
+def text_to_speech(text, voice_id='LcfcDJNUP1GQjkzn1xUU'):
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    client = ElevenLabs(api_key=api_key)
+    voice = Voice(
+        voice_id=voice_id,
+        settings=VoiceSettings(stability=0.8, similarity_boost=0.75, style=0.0, use_speaker_boost=True),
+        language_code="nl"  # Ensure the language code is set to Dutch
+    )
+    audio_generator = client.generate(text=text, voice=voice, model="eleven_multilingual_v2")
+    audio = b"".join(audio_generator)  # Convert generator to bytes
+    audio_file = BytesIO(audio)
     return audio_file
+
+def speech_to_text(audio_file):
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    client = ElevenLabs(api_key=api_key)
+    voices = client.list_voices()
+    for voice in voices:
+        print(f"Voice ID: {voice.voice_id}, Name: {voice.name}, Language: {voice.language_code}")
+
 
 def speech_to_text(audio_file):
     recognizer = sr.Recognizer()
@@ -71,12 +86,13 @@ async def on_chat_start():
     cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
     cl.user_session.set("chat_history", [{"role": "system", "content": system_instruction}])
     setup_runnable()
-    opening_message = (
-        "Hallo! Ik ben Lotte, jouw digitale tutor. Ik ga je helpen om Nederlands te leren op een leuke en makkelijke manier. "
-        "We gaan samen oefenen met woorden, zinnen en gesprekjes die je in het dagelijks leven kunt gebruiken, zoals op school of met je vrienden. "
-        "Als je iets niet begrijpt, maakt dat helemaal niet uit! Ik ben hier om je te helpen en je aan te moedigen. Laten we samen beginnen! "
-        "Ik ben niet een echte leraar, maar een AI-assistent die je helpt om Nederlands te leren. Ik herinner je er af en toe aan dat ik een AI-assistent ben, zodat je niet in de war raakt."
-    )
+    # opening_message = (
+    #     "Hallo! Ik ben Lotte, jouw digitale tutor. Ik ga je helpen om Nederlands te leren op een leuke en makkelijke manier. "
+    #     "We gaan samen oefenen met woorden, zinnen en gesprekjes die je in het dagelijks leven kunt gebruiken, zoals op school of met je vrienden. "
+    #     "Als je iets niet begrijpt, maakt dat helemaal niet uit! Ik ben hier om je te helpen en je aan te moedigen. Laten we samen beginnen! "
+    #     "Ik ben niet een echte leraar, maar een AI-assistent die je helpt om Nederlands te leren. Ik herinner je er af en toe aan dat ik een AI-assistent ben, zodat je niet in de war raakt."
+    # )
+    opening_message = "Hallo! Ik ben" # for testing
     message = await cl.Message(content=opening_message).send()
 
     # Convert the opening message to speech and send it as audio
