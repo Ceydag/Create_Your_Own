@@ -75,7 +75,12 @@ def setup_runnable():
 @cl.on_chat_start
 async def on_chat_start():
     setup_runnable()
-    opening_message = "Hallo! Ik ben" # for testing
+    opening_message = (
+        "Hallo! Ik ben Lotte, jouw digitale tutor. Ik ga je helpen om Nederlands te leren op een leuke en makkelijke manier. "
+        "We gaan samen oefenen met woorden, zinnen en gesprekjes die je in het dagelijks leven kunt gebruiken, zoals op school of met je vrienden. "
+        "Als je iets niet begrijpt, maakt dat helemaal niet uit! Ik ben hier om je te helpen en je aan te moedigen. Laten we samen beginnen! "
+        "Ik ben niet een echte leraar, maar een AI-assistent die je helpt om Nederlands te leren. Ik herinner je er af en toe aan dat ik een AI-assistent ben, zodat je niet in de war raakt."
+    )
     message = await cl.Message(content=opening_message).send()
 
     # Convert the opening message to speech and send it as audio
