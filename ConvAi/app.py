@@ -7,10 +7,9 @@ from langchain.schema.runnable.config import RunnableConfig
 from chainlit.types import ThreadDict
 import chainlit as cl
 from prompt import system_instruction  # Import the system instruction
-# from llm import chat, messages
+from llm import chat, messages
 from dotenv import load_dotenv
 import openai
-import tempfile
 import os
 from gtts import gTTS
 import speech_recognition as sr
@@ -55,26 +54,26 @@ def speech_to_text(audio_file):
     except sr.RequestError as e:
         return f"Could not request results; {e}"
 
-def setup_runnable():
-    model = ChatOpenAI(streaming=True, model_name="gpt-3.5-turbo", temperature=0.5)  # Change the model name here
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_instruction),
-            ("human", "{question}"),
-        ]
-    )
+# def setup_runnable():
+#     model = ChatOpenAI(streaming=True, model_name="gpt-3.5-turbo", temperature=0.5)  # Change the model name here
+#     prompt = ChatPromptTemplate.from_messages(
+#         [
+#             ("system", system_instruction),
+#             ("human", "{question}"),
+#         ]
+#     )
 
-    runnable = (
-        RunnablePassthrough()
-        | prompt
-        | model
-        | StrOutputParser()
-    )
-    cl.user_session.set("runnable", runnable)
+#     runnable = (
+#         RunnablePassthrough()
+#         | prompt
+#         | model
+#         | StrOutputParser()
+#     )
+#     cl.user_session.set("runnable", runnable)
 
 @cl.on_chat_start
 async def on_chat_start():
-    setup_runnable()
+    # setup_runnable()
     opening_message = (
         "Hallo! Ik ben Lotte, jouw digitale tutor. Ik ga je helpen om Nederlands te leren op een leuke en makkelijke manier. "
         "We gaan samen oefenen met woorden, zinnen en gesprekjes die je in het dagelijks leven kunt gebruiken, zoals op school of met je vrienden. "
@@ -88,27 +87,29 @@ async def on_chat_start():
     audio_data = audio_file.read()
     await cl.Audio(content=audio_data, mime_type="audio/mp3").send(for_id=message.id)  # Use the message ID
 
-@cl.on_chat_resume
-async def on_chat_resume(thread: ThreadDict):
-    setup_runnable()
+# @cl.on_chat_resume
+# async def on_chat_resume(thread: ThreadDict):
+#     setup_runnable()
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    runnable = cl.user_session.get("runnable")  # type: Runnable
+    # Append the user message to the messages list
+    messages.append({"role": "user", "content": message.content})
 
-    res = cl.Message(content="")
+    # Get the response from the chat function
+    response = chat(messages)
 
-    async for chunk in runnable.astream(
-        {"question": message.content},
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
-    ):
-        await res.stream_token(chunk)
+    # Append the system response to the messages list
+    messages.append({"role": "system", "content": response})
 
+    # Send the response as a message
+    res = cl.Message(content=response)
     await res.send()
 
-    audio_file = text_to_speech(res.content)  # Convert response to speech
+    # Convert the response to speech and send it as audio
+    audio_file = text_to_speech(response)
     audio_data = audio_file.read()
-    await cl.Audio(content=audio_data, mime_type="audio/mp3").send(for_id=res.id)  # Send audio to browser
+    await cl.Audio(content=audio_data, mime_type="audio/mp3").send(for_id=res.id)
 
 @cl.on_audio_chunk
 async def on_audio_chunk(chunk: cl.AudioChunk):
