@@ -1,0 +1,17 @@
+/* public/custom.css */
+
+.left-side-image {
+    position: fixed; /* Use fixed positioning to keep the image in place */
+    right: 0%; /* Adjust the left position to move the image more to the right */
+    top: 50%; /* Position the image in the middle vertically */
+    transform: translateY(-50%); /* Center the image vertically */
+    width: 600px; /* Adjust the width to make the image larger */
+    height: 850px;
+    z-index: 1000; /* Ensure the image is on top */
+}
+
+@media only screen and (max-width: 600px) {
+    .left-side-image {
+        display: none; /* Hide the image on mobile devices */
+    }
+}
